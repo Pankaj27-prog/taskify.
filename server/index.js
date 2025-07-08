@@ -30,6 +30,13 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline';"
+  );
+  next();
+});
 
 // User schema for MongoDB
 const userSchema = new mongoose.Schema({
