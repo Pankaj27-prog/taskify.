@@ -35,6 +35,10 @@ export function BoardProvider({ children }) {
     };
   }, []);
 
+  const API_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production'
+    ? 'https://taskify-r4fv.onrender.com'
+    : 'http://localhost:5000');
+
   // Fetch tasks from backend
   const fetchTasks = useCallback(async () => {
     const token = getToken();
@@ -42,7 +46,7 @@ export function BoardProvider({ children }) {
     if (!token || !userEmail) return; // Only fetch if logged in
     
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/tasks`, {
+      const res = await fetch(`${API_URL}/tasks`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) {
@@ -72,7 +76,7 @@ export function BoardProvider({ children }) {
     
     try {
       console.log("[Activities] Fetching activities from server...");
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/activities`, {
+      const res = await fetch(`${API_URL}/activities`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) {
@@ -98,7 +102,7 @@ export function BoardProvider({ children }) {
   const createTask = async (task) => {
     const token = getToken();
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/tasks`, {
+      const res = await fetch(`${API_URL}/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +162,7 @@ export function BoardProvider({ children }) {
       };
       delete requestBody._id;
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/tasks/${id}`, {
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -202,7 +206,7 @@ export function BoardProvider({ children }) {
     const token = getToken();
     
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/tasks/${id}`, {
+      const res = await fetch(`${API_URL}/tasks/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -233,7 +237,7 @@ export function BoardProvider({ children }) {
     console.log("[AddActivity] Logging activity:", action);
     
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/activities`, {
+      const res = await fetch(`${API_URL}/activities`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,7 +332,7 @@ export function BoardProvider({ children }) {
     const token = getToken();
     
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/tasks/${taskId}/resolve-conflict`, {
+      const res = await fetch(`${API_URL}/tasks/${taskId}/resolve-conflict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

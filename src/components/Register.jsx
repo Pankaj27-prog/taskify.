@@ -8,12 +8,16 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const API_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production'
+    ? 'https://taskify-r4fv.onrender.com'
+    : 'http://localhost:5000');
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/register`, {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
