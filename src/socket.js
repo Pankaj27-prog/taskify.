@@ -1,7 +1,8 @@
 import { io } from "socket.io-client";
 
-// Create socket connection with error handling
-const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
+// Always use the backend URL from the environment variable for Socket.IO
+// In production, set REACT_APP_SOCKET_URL to your backend's public URL (e.g., https://your-backend.onrender.com)
+const socket = io(process.env.REACT_APP_SOCKET_URL, {
   autoConnect: false, // Don't connect automatically
   reconnection: true,
   reconnectionAttempts: 5,
@@ -13,29 +14,23 @@ const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
 
 // Handle connection errors with more detail
 socket.on("connect_error", (error) => {
-  console.log("Socket connection failed:", error.message);
-  console.log("Error details:", error);
+  // Optionally handle connection errors here
 });
 
 socket.on("connect", () => {
-  console.log("Socket connected successfully");
+  // Optionally handle successful connection here
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("Socket disconnected:", reason);
+  // Optionally handle disconnects here
 });
 
 socket.on("reconnect", (attemptNumber) => {
-  console.log("Socket reconnected after", attemptNumber, "attempts");
+  // Optionally handle reconnection here
 });
 
 socket.on("reconnect_error", (error) => {
-  console.log("Socket reconnection failed:", error.message);
+  // Optionally handle reconnection errors here
 });
-
-// Remove auto-connect on import. The socket should only connect when explicitly called after authentication.
-// if (typeof window !== 'undefined') {
-//   socket.connect();
-// }
 
 export { socket };

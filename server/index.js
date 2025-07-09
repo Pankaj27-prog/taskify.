@@ -640,6 +640,15 @@ app.delete('/tasks/test-cleanup', authenticateToken, async (req, res) => {
   }
 });
 
+// Serve static files from the React app build folder
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../build')));
+
+// Only handle non-API GET requests (avoid interfering with API routes)
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 }); 
