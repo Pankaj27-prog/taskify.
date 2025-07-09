@@ -274,7 +274,7 @@ export function BoardProvider({ children }) {
   useEffect(() => {
     fetchTasks();
     fetchActivities();
-  }, [fetchTasks, fetchActivities]);
+  }, []); // Only run once on mount to avoid too many requests
 
   // Real-time sync with socket.io
   useEffect(() => {
