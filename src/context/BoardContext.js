@@ -364,7 +364,8 @@ export function BoardProvider({ children }) {
       updateTask, 
       deleteTask,
       resolveConflict,
-      onlineUsers
+      onlineUsers,
+      setOnlineUsers
     }}>
       {children}
     </BoardContext.Provider>
