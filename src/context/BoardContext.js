@@ -60,7 +60,6 @@ export function BoardProvider({ children }) {
         setTasks(data);
       }
     } catch (error) {
-      console.log("Server not available - using local state only");
       // Continue with empty tasks array if server is not available
     }
   }, [API_URL]);
@@ -70,12 +69,11 @@ export function BoardProvider({ children }) {
     const token = getToken();
     const userEmail = getUserEmail();
     if (!token || !userEmail) {
-      console.log("[Activities] No token or user email, skipping fetch");
-      return; // Only fetch if logged in
+      // Only fetch if logged in
+      return;
     }
     
     try {
-      console.log("[Activities] Fetching activities from server...");
       const res = await fetch(`${API_URL}/activities`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -87,13 +85,11 @@ export function BoardProvider({ children }) {
       }
       if (res.ok) {
         const data = await res.json();
-        console.log("[Activities] Received activities:", data);
         setActivity(data);
       } else {
-        console.log("[Activities] Server responded with status:", res.status);
+        // Server responded with status
       }
     } catch (error) {
-      console.log("[Activities] Server not available - using local activity state:", error.message);
       // Continue with empty activity array if server is not available
     }
   }, [API_URL]);
@@ -126,7 +122,6 @@ export function BoardProvider({ children }) {
           // Check if task already exists to prevent duplicates
           const exists = prev.some(t => t._id === newTask._id);
           if (exists) {
-            console.log('[createTask] Task already exists, updating instead:', newTask._id);
             return prev.map(t => t._id === newTask._id ? newTask : t);
           }
           return [newTask, ...prev];
@@ -134,7 +129,7 @@ export function BoardProvider({ children }) {
         return newTask;
       }
     } catch (error) {
-      console.log("Server not available - creating task locally");
+      // Continue with empty tasks array if server is not available
       const mockTask = {
         _id: Date.now().toString(),
         ...task,
@@ -186,7 +181,6 @@ export function BoardProvider({ children }) {
         try {
           errorText = await res.text();
         } catch (e) {}
-        console.error(`[updateTask] Request failed: status ${res.status}, body:`, errorText);
         return { error: `Request failed: ${res.status}`, details: errorText };
       }
       if (res.ok) {
@@ -195,7 +189,7 @@ export function BoardProvider({ children }) {
         return updated;
       }
     } catch (error) {
-      console.log("Server not available - updating task locally");
+      // Continue with empty tasks array if server is not available
       setTasks(prev => prev.map(t => t._id === id ? { ...t, ...updates, version: (t.version || 1) + 1 } : t));
       return { _id: id, ...updates, version: (updates.version || 1) + 1 };
     }
@@ -216,14 +210,11 @@ export function BoardProvider({ children }) {
         window.location.href = "/login";
         return;
       }
-      if (res.status === 404) {
-        return null; // Silently ignore 404
-      }
-      if (res.ok) {
-        // Task deleted successfully on server
-      }
+      // Always resolve, never throw or print
+      return;
     } catch (error) {
       // Silently ignore all errors
+      return;
     }
   };
 
@@ -231,11 +222,8 @@ export function BoardProvider({ children }) {
   const addActivity = async (action) => {
     const token = getToken();
     if (!token) {
-      console.log("[AddActivity] No token available");
       return;
     }
-    
-    console.log("[AddActivity] Logging activity:", action);
     
     try {
       const res = await fetch(`${API_URL}/activities`, {
@@ -256,14 +244,12 @@ export function BoardProvider({ children }) {
       
       if (res.ok) {
         const newActivity = await res.json();
-        console.log("[AddActivity] Activity logged successfully:", newActivity);
         // Do not update setActivity here; let the socket event handle it
         return newActivity;
       } else {
-        console.log("[AddActivity] Server responded with status:", res.status);
+        // Server responded with status
       }
     } catch (error) {
-      console.log("[AddActivity] Server not available - logging activity locally:", error.message);
       // Log activity locally
       const localActivity = {
         _id: Date.now().toString(),
@@ -271,7 +257,6 @@ export function BoardProvider({ children }) {
         ...action,
         timestamp: new Date()
       };
-      console.log("[AddActivity] Created local activity:", localActivity);
       setActivity(prev => [localActivity, ...prev.slice(0, 19)]); // Keep only 20 activities
     }
   };
@@ -288,7 +273,6 @@ export function BoardProvider({ children }) {
         // Check if task already exists to prevent duplicates
         const exists = prev.some(t => t._id === task._id);
         if (exists) {
-          console.log('[Socket] Task already exists, updating instead:', task._id);
           return prev.map(t => t._id === task._id ? task : t);
         }
         return [task, ...prev];
@@ -355,7 +339,6 @@ export function BoardProvider({ children }) {
         return resolvedTask;
       }
     } catch (error) {
-      console.log("Server not available - resolving conflict locally");
       // Resolve conflict locally
       const resolvedTask = {
         _id: taskId,
