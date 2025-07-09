@@ -127,7 +127,7 @@ async function testConflictHandling({ createTask, updateTask, resolveConflict, f
 }
 
 export default function Board() {
-  const { tasks, setTasks, addActivity, createTask, updateTask, deleteTask, resolveConflict, fetchTasks, onlineUsers } = useContext(BoardContext);
+  const { tasks, setTasks, onlineUsers, setOnlineUsers, addActivity, createTask, updateTask, deleteTask, resolveConflict, fetchTasks } = useContext(BoardContext);
   const { user, setUser } = useContext(UserContext);
   const [dragged, setDragged] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -215,9 +215,6 @@ export default function Board() {
   }, [showOnlineDropdown]);
 
   useEffect(() => {
-    function handleOnlineUsers(users) {
-      setOnlineUsers(users);
-    }
     // Assuming 'socket' is available in the context or passed as a prop
     // For now, we'll just log the online users directly as a placeholder
     // In a real app, you'd have a WebSocket context or pass the socket instance
