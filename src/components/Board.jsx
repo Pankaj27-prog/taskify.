@@ -164,6 +164,11 @@ export default function Board() {
     fetchUsers();
   }, []);
 
+  // Disable the conflict test by default
+  useEffect(() => {
+    localStorage.setItem('disableConflictTest', 'true'); // Disable conflict test
+  }, []);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only run in development and only once, and only if not disabled
@@ -245,25 +250,27 @@ export default function Board() {
     e.preventDefault();
     setAddError("");
     if (!newTask.title.trim()) return;
-    const createdTask = await createTask(newTask);
-    if (createdTask && createdTask.message) {
-      setAddError(createdTask.message);
-      if (createdTask.message.toLowerCase().includes("conflict")) {
-        setToast("A conflict occurred while creating the task. Please try again with a different title.");
-        setTimeout(() => setToast(""), 3000);
+    try {
+      const createdTask = await createTask(newTask);
+      if (createdTask && createdTask.message) {
+        setAddError(createdTask.message);
+        // Optionally clear the error after 4 seconds
+        setTimeout(() => setAddError(""), 4000);
+        return;
       }
-      return;
+      if (createdTask) {
+        await addActivity({ 
+          actionType: "Created", 
+          description: `Created task '${newTask.title}'`,
+          taskId: createdTask._id,
+          taskTitle: newTask.title
+        });
+      }
+      setShowModal(false);
+      setNewTask({ title: "", description: "", status: "Todo", assignedTo: user ? user.email : "", priority: "Medium" });
+    } catch (err) {
+      setAddError("Failed to create task. See console for details.");
     }
-    if (createdTask) {
-      await addActivity({ 
-        actionType: "Created", 
-        description: `Created task '${newTask.title}'`,
-        taskId: createdTask._id,
-        taskTitle: newTask.title
-      });
-    }
-    setShowModal(false);
-    setNewTask({ title: "", description: "", status: "Todo", assignedTo: user ? user.email : "", priority: "Medium" });
   };
 
   const goToActivityPage = () => {
@@ -275,42 +282,52 @@ export default function Board() {
     setEditModal({ open: true, task });
   };
   const handleDeleteTask = async (task) => {
-    await deleteTask(task._id);
-    await addActivity({ 
-      actionType: "Deleted", 
-      description: `Deleted task '${task.title}'`,
-      taskId: task._id,
-      taskTitle: task.title
-    });
+    try {
+      await deleteTask(task._id);
+      await addActivity({ 
+        actionType: "Deleted", 
+        description: `Deleted task '${task.title}'`,
+        taskId: task._id,
+        taskTitle: task.title
+      });
+    } catch (err) {
+      console.error("[DeleteTask] Error deleting task:", err, task);
+      alert("Failed to delete task. See console for details.");
+    }
   };
   const handleUpdateTask = async (e) => {
     e.preventDefault();
     setEditError("");
     const { task } = editModal;
-    const result = await updateTask(task._id, task);
-    if (result && result.message) {
-      setEditError(result.message);
-      if (result.message.toLowerCase().includes("conflict")) {
-        setToast("A conflict occurred while updating the task. Please resolve the conflict.");
-        setTimeout(() => setToast(""), 3000);
+    try {
+      const result = await updateTask(task._id, task);
+      if (result && result.message) {
+        setEditError(result.message);
+        if (result.message.toLowerCase().includes("conflict")) {
+          setToast("A conflict occurred while updating the task. Please resolve the conflict.");
+          setTimeout(() => setToast(""), 3000);
+        }
+        return;
       }
-      return;
+      if (result && result.conflict) {
+        setConflictModal({ open: true, conflict: result.conflict });
+        setToast("A conflict was detected. Please resolve it below.");
+        setTimeout(() => setToast(""), 3000);
+        return;
+      }
+      if (result) {
+        await addActivity({ 
+          actionType: "Edited", 
+          description: `Edited task '${task.title}'`,
+          taskId: task._id,
+          taskTitle: task.title
+        });
+      }
+      setEditModal({ open: false, task: null });
+    } catch (err) {
+      console.error("[UpdateTask] Error updating task:", err, task);
+      setEditError("Failed to update task. See console for details.");
     }
-    if (result && result.conflict) {
-      setConflictModal({ open: true, conflict: result.conflict });
-      setToast("A conflict was detected. Please resolve it below.");
-      setTimeout(() => setToast(""), 3000);
-      return;
-    }
-    if (result) {
-      await addActivity({ 
-        actionType: "Edited", 
-        description: `Edited task '${task.title}'`,
-        taskId: task._id,
-        taskTitle: task.title
-      });
-    }
-    setEditModal({ open: false, task: null });
   };
 
   const handleConflictResolved = async (resolvedTask) => {
@@ -674,7 +691,10 @@ export default function Board() {
               type="text"
               placeholder="Task title"
               value={newTask.title}
-              onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+              onChange={e => {
+                setNewTask({ ...newTask, title: e.target.value });
+                if (addError) setAddError(""); // Clear error when user starts typing
+              }}
               required
             />
             <textarea
