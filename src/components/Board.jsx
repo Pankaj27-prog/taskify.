@@ -127,7 +127,7 @@ async function testConflictHandling({ createTask, updateTask, resolveConflict, f
 }
 
 export default function Board() {
-  const { tasks, setTasks, onlineUsers, setOnlineUsers, addActivity, createTask, updateTask, deleteTask, resolveConflict, fetchTasks } = useContext(BoardContext);
+  const { tasks, setTasks, onlineUsers, addActivity, createTask, updateTask, deleteTask, resolveConflict, fetchTasks } = useContext(BoardContext);
   const { user, setUser } = useContext(UserContext);
   const [dragged, setDragged] = useState(null);
   const [showModal, setShowModal] = useState(false);
