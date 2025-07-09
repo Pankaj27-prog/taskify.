@@ -63,7 +63,7 @@ export function BoardProvider({ children }) {
       console.log("Server not available - using local state only");
       // Continue with empty tasks array if server is not available
     }
-  }, []);
+  }, [API_URL]);
 
   // Fetch activities from backend
   const fetchActivities = useCallback(async () => {
@@ -96,7 +96,7 @@ export function BoardProvider({ children }) {
       console.log("[Activities] Server not available - using local activity state:", error.message);
       // Continue with empty activity array if server is not available
     }
-  }, []);
+  }, [API_URL]);
 
   // Create a new task
   const createTask = async (task) => {
@@ -278,7 +278,7 @@ export function BoardProvider({ children }) {
   useEffect(() => {
     fetchTasks();
     fetchActivities();
-  }, []); // Only run once on mount to avoid too many requests
+  }, [fetchTasks, fetchActivities]); // Only run once on mount to avoid too many requests
 
   // Real-time sync with socket.io
   useEffect(() => {
