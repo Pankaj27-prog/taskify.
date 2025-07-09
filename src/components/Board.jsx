@@ -214,6 +214,16 @@ export default function Board() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showOnlineDropdown]);
 
+  useEffect(() => {
+    function handleOnlineUsers(users) {
+      setOnlineUsers(users);
+    }
+    // Assuming 'socket' is available in the context or passed as a prop
+    // For now, we'll just log the online users directly as a placeholder
+    // In a real app, you'd have a WebSocket context or pass the socket instance
+    // console.log('Online users:', onlineUsers); // This line is now redundant as onlineUsers is directly from context
+  }, [onlineUsers]); // Add onlineUsers to dependency array
+
   if (!user) return null;
 
   const handleDragStart = (task) => setDragged(task);
@@ -283,12 +293,8 @@ export default function Board() {
   };
   const handleDeleteTask = async (task) => {
     try {
-      const result = await deleteTask(task._id);
-      // If the task was not found (404), just remove it from the UI
-      if (result && result.status === 404) {
-        setTasks(prev => prev.filter(t => t._id !== task._id));
-        return;
-      }
+      await deleteTask(task._id);
+      setTasks(prev => prev.filter(t => t._id !== task._id)); // Always remove from UI
       await addActivity({
         actionType: "Deleted",
         description: `Deleted task '${task.title}'`,
@@ -366,7 +372,11 @@ export default function Board() {
       }
     });
     if (bestUser) {
-      await updateTask(task._id, { assignedTo: bestUser });
+      const result = await updateTask(task._id, { assignedTo: bestUser });
+      if (result && result.status === 404) {
+        setTasks(prev => prev.filter(t => t._id !== task._id)); // Remove from UI if not found
+        return;
+      }
       await addActivity({
         actionType: "Smart Assigned",
         description: `Smart assigned '${task.title}' to ${bestUser}`,
