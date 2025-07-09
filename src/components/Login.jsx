@@ -19,6 +19,16 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      if (res.status === 401) {
+        setError("Invalid email or password.");
+        setIsLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setError("Login failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
       const data = await res.json();
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
@@ -29,7 +39,7 @@ export default function Login() {
         setError(data.message || "Login failed");
       }
     } catch (err) {
-      setError("Server error");
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
