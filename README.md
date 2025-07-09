@@ -54,7 +54,7 @@ Authentication: JWT (JSON Web Tokens)
 
 🌐 Live Demo
     Deployed App
-    ![Render link](https://taskify-r4fv.onrender.com)
+     https://taskify-r4fv.onrender.com
 Demo Video: Watch on YouTube
    📹 Demo Video
-    ![Watch the demo](https://youtu.be/JnQJRWSK2Jg)
+     https://youtu.be/JnQJRWSK2Jg
