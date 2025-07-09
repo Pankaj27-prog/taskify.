@@ -15,7 +15,7 @@ export function BoardProvider({ children }) {
   // Authenticate socket on connect
   useEffect(() => {
     const token = getToken();
-    if (token) {
+    if (token && !socket.connected) {
       socket.connect();
       socket.emit('authenticate', token);
     }
@@ -217,13 +217,13 @@ export function BoardProvider({ children }) {
         return;
       }
       if (res.status === 404) {
-        return { status: 404 };
+        return null; // Silently ignore 404
       }
       if (res.ok) {
         // Task deleted successfully on server
       }
     } catch (error) {
-      // Optionally handle error silently
+      // Silently ignore all errors
     }
   };
 
