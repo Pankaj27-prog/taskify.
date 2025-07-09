@@ -410,15 +410,17 @@ app.put('/tasks/:id', authenticateToken, async (req, res) => {
 // Delete a task (protected)
 app.delete('/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+  const isValidMongoId = id.match(/^[0-9a-fA-F]{24}$/);
 
   if (!isValidMongoId) {
     // Always treat as mock/local task and return success
-    return res.json({ message: 'Mock task deleted' });
+    return res.status(204).end();
   }
 
   try {
     const task = await Task.findByIdAndDelete(id);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
+    // If not found, return 204 No Content (idempotent)
+    if (!task) return res.status(204).end();
 
     // Log the activity
     await logActivity(req.user.email, 'Deleted', `Deleted task '${task.title}'`, task._id, task.title);
@@ -426,7 +428,7 @@ app.delete('/tasks/:id', authenticateToken, async (req, res) => {
     io.emit('taskDeleted', task);
     res.json({ message: 'Task deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    res.status(204).end(); // Silently succeed on error
   }
 });
 
