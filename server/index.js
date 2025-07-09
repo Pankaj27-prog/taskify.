@@ -422,8 +422,8 @@ app.put('/tasks/:id', authenticateToken, async (req, res) => {
     io.emit('taskUpdated', task);
     res.json(task);
   } catch (error) {
-    console.error('Error updating task:', error);
-    res.status(500).json({ message: 'Error updating task' });
+    console.error('[PUT /tasks/:id] Error:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 });
 
