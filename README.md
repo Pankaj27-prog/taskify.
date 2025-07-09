@@ -1,5 +1,5 @@
 Collaborative Kanban Board
-![Demo Video](https://youtu.be/JnQJRWSK2Jg)
+https://youtu.be/JnQJRWSK2Jg
 
 🚀 Project Overview
 This is a real-time collaborative Kanban board application designed for teams to manage tasks efficiently. Users can register, log in, create and assign tasks, move them across columns, and experience instant updates across all connected clients. The app features Smart Assign for fair task distribution and robust conflict handling for simultaneous edits.
@@ -13,11 +13,11 @@ Authentication: JWT (JSON Web Tokens)
 
 ⚙️ Setup & Installation
 1. Clone the Repository
-     git clone https://github.com/your-username/your-repo.git
+     git clone https://github.com/Pankaj27-prog/taskify.
      cd your-repo
 
 2. Backend Setup
-     git clone https://github.com/your-username/your-repo.git
+     git clone https://github.com/Pankaj27-prog/taskify.
      cd your-repo
 
 4. Frontend Setup
