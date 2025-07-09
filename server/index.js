@@ -430,42 +430,33 @@ app.put('/tasks/:id', authenticateToken, async (req, res) => {
 // Delete a task (protected)
 app.delete('/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  console.log('[DELETE /tasks/:id] Request to delete task with id:', id);
-  if (!id) {
-    return res.status(400).json({ message: 'Missing task ID' });
-  }
-  
   // Allow both MongoDB ObjectId format and numeric/string IDs for mock tasks
   const isValidMongoId = id.match(/^[0-9a-fA-F]{24}$/);
   const isValidMockId = /^[0-9]+$/.test(id) || id.length > 0;
-  
+
   if (!isValidMongoId && !isValidMockId) {
     return res.status(400).json({ message: 'Invalid task ID format' });
   }
-  // Check if MongoDB is connected and ID is a valid MongoDB ObjectId
-  if (mongoose.connection.readyState !== 1 || !isValidMongoId) {
-    // Mock delete for in-memory storage or non-MongoDB IDs
-    const mockTask = {
-      _id: id,
-      title: 'Mock Task',
-      description: 'This was a mock task'
-    };
-    
+
+  try {
+    // If not a valid MongoDB ObjectId, treat as mock/local task
+    if (!isValidMongoId) {
+      // Optionally, emit a socket event or just return success
+      return res.json({ message: 'Mock task deleted' });
+    }
+
+    const task = await Task.findByIdAndDelete(id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
     // Log the activity
-    await logActivity(req.user.email, 'Deleted', `Deleted task '${mockTask.title}'`, mockTask._id, mockTask.title);
+    await logActivity(req.user.email, 'Deleted', `Deleted task '${task.title}'`, task._id, task.title);
     
-    io.emit('taskDeleted', mockTask);
-    return res.json({ message: 'Task deleted' });
+    io.emit('taskDeleted', task);
+    res.json({ message: 'Task deleted' });
+  } catch (error) {
+    console.error('[DELETE /tasks/:id] Error:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
-  
-  const task = await Task.findByIdAndDelete(id);
-  if (!task) return res.status(404).json({ message: 'Task not found' });
-  
-  // Log the activity
-  await logActivity(req.user.email, 'Deleted', `Deleted task '${task.title}'`, task._id, task.title);
-  
-  io.emit('taskDeleted', task);
-  res.json({ message: 'Task deleted' });
 });
 
 // Get activity logs (protected) - returns last 20 actions
