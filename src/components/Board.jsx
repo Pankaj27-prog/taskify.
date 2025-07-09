@@ -780,6 +780,10 @@ export default function Board() {
           position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: toast.startsWith('Task smart assigned') ? '#2563eb' : '#e53e3e', color: '#fff', padding: '0.9em 2em', borderRadius: '1.2em', fontWeight: 600, fontSize: '1.1em', zIndex: 9999, boxShadow: '0 2px 12px rgba(0,0,0,0.13)'
         }}>{toast}</div>
       )}
+      {/* Debug: Show online users */}
+      <div style={{ padding: '8px', background: '#f0f4ff', borderBottom: '1px solid #cbd5e1', fontSize: '0.95em' }}>
+        <strong>Online Users:</strong> {onlineUsers && onlineUsers.length > 0 ? onlineUsers.join(', ') : 'None'}
+      </div>
     </>
   );
 }
