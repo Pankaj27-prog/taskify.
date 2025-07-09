@@ -216,13 +216,14 @@ export function BoardProvider({ children }) {
         window.location.href = "/login";
         return;
       }
+      if (res.status === 404) {
+        return { status: 404 };
+      }
       if (res.ok) {
         // Task deleted successfully on server
       }
     } catch (error) {
-      console.log("Server not available - deleting task locally");
-      // Delete task locally
-      setTasks(prev => prev.filter(t => t._id !== id));
+      // Optionally handle error silently
     }
   };
 

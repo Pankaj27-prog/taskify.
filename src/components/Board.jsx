@@ -283,16 +283,20 @@ export default function Board() {
   };
   const handleDeleteTask = async (task) => {
     try {
-      await deleteTask(task._id);
-      await addActivity({ 
-        actionType: "Deleted", 
+      const result = await deleteTask(task._id);
+      // If the task was not found (404), just remove it from the UI
+      if (result && result.status === 404) {
+        setTasks(prev => prev.filter(t => t._id !== task._id));
+        return;
+      }
+      await addActivity({
+        actionType: "Deleted",
         description: `Deleted task '${task.title}'`,
         taskId: task._id,
         taskTitle: task.title
       });
     } catch (err) {
-      console.error("[DeleteTask] Error deleting task:", err, task);
-      alert("Failed to delete task. See console for details.");
+      // Silently ignore errors
     }
   };
   const handleUpdateTask = async (e) => {
