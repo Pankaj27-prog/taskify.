@@ -7,7 +7,6 @@ const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:5000", {
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   timeout: 10000,
-  transports: ['polling'], // Use only polling to avoid WebSocket issues
   forceNew: true, // Force new connection to avoid conflicts
   withCredentials: true
 });
@@ -34,9 +33,9 @@ socket.on("reconnect_error", (error) => {
   console.log("Socket reconnection failed:", error.message);
 });
 
-// Only connect if we're in a browser environment
-if (typeof window !== 'undefined') {
-  socket.connect();
-}
+// Remove auto-connect on import. The socket should only connect when explicitly called after authentication.
+// if (typeof window !== 'undefined') {
+//   socket.connect();
+// }
 
 export { socket };

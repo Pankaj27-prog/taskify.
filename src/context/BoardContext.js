@@ -65,9 +65,13 @@ export function BoardProvider({ children }) {
   const fetchActivities = useCallback(async () => {
     const token = getToken();
     const userEmail = getUserEmail();
-    if (!token || !userEmail) return; // Only fetch if logged in
+    if (!token || !userEmail) {
+      console.log("[Activities] No token or user email, skipping fetch");
+      return; // Only fetch if logged in
+    }
     
     try {
+      console.log("[Activities] Fetching activities from server...");
       const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/activities`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -79,10 +83,13 @@ export function BoardProvider({ children }) {
       }
       if (res.ok) {
         const data = await res.json();
+        console.log("[Activities] Received activities:", data);
         setActivity(data);
+      } else {
+        console.log("[Activities] Server responded with status:", res.status);
       }
     } catch (error) {
-      console.log("Server not available - using local activity state");
+      console.log("[Activities] Server not available - using local activity state:", error.message);
       // Continue with empty activity array if server is not available
     }
   }, []);
@@ -107,7 +114,7 @@ export function BoardProvider({ children }) {
       }
       if (res.status === 409) {
         const err = await res.json();
-        return { message: err.message };
+        return { message: err.message || "A task with this title already exists." };
       }
       if (res.ok) {
         const newTask = await res.json();
@@ -168,7 +175,7 @@ export function BoardProvider({ children }) {
       if (res.status === 409) {
         const err = await res.json();
         if (err.conflict) return { conflict: err.conflict };
-        return { message: err.message };
+        return { message: err.message || "This task was updated by someone else. Please refresh and try again." };
       }
       if (!res.ok && res.status !== 409) {
         let errorText = '';
@@ -218,7 +225,12 @@ export function BoardProvider({ children }) {
   // Log activity to backend
   const addActivity = async (action) => {
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      console.log("[AddActivity] No token available");
+      return;
+    }
+    
+    console.log("[AddActivity] Logging activity:", action);
     
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/activities`, {
@@ -239,11 +251,14 @@ export function BoardProvider({ children }) {
       
       if (res.ok) {
         const newActivity = await res.json();
+        console.log("[AddActivity] Activity logged successfully:", newActivity);
         // Do not update setActivity here; let the socket event handle it
         return newActivity;
+      } else {
+        console.log("[AddActivity] Server responded with status:", res.status);
       }
     } catch (error) {
-      console.log("Server not available - logging activity locally");
+      console.log("[AddActivity] Server not available - logging activity locally:", error.message);
       // Log activity locally
       const localActivity = {
         _id: Date.now().toString(),
@@ -251,6 +266,7 @@ export function BoardProvider({ children }) {
         ...action,
         timestamp: new Date()
       };
+      console.log("[AddActivity] Created local activity:", localActivity);
       setActivity(prev => [localActivity, ...prev.slice(0, 19)]); // Keep only 20 activities
     }
   };

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -8,16 +8,21 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { 
-    origin: process.env.SOCKET_CORS_ORIGIN || "*",
-    methods: ["GET", "POST"],
+  cors: {
+    origin: 'http://localhost:3000',
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST"]
   },
-  transports: ['polling'], // Use only polling to avoid WebSocket issues
-  allowEIO3: true, // Allow Engine.IO v3 clients
+  // transports: ['websocket', 'polling'], // Removed explicit transports
+  allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000
 });
@@ -25,10 +30,6 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key'; // Change this in production
 const COLUMN_NAMES = ["todo", "in progress", "done"];
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "*",
-  credentials: true
-}));
 app.use(express.json());
 
 // User schema for MongoDB
@@ -81,12 +82,16 @@ const Activity = mongoose.model('Activity', activitySchema);
 // Middleware to verify JWT
 function authenticateToken(req, res, next) {
   const auth = req.headers.authorization;
-  if (!auth) return res.status(401).json({ message: 'No token' });
+  if (!auth) {
+    console.log('[AUTH] No Authorization header');
+    return res.status(401).json({ message: 'No token' });
+  }
   const token = auth.split(' ')[1];
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
-  } catch {
+  } catch (err) {
+    console.log('[AUTH] Invalid token:', err.message);
     res.status(401).json({ message: 'Invalid token' });
   }
 }
@@ -116,6 +121,12 @@ const onlineUsers = new Set();
 // Socket.IO connection
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+  socket.on('error', (err) => {
+    console.log('[SOCKET.IO] Error:', err);
+  });
+  socket.on('connect_error', (err) => {
+    console.log('[SOCKET.IO] Connect error:', err);
+  });
   // Listen for authentication (client should emit 'authenticate' with token after connecting)
   socket.on('authenticate', (token) => {
     try {
@@ -222,13 +233,20 @@ app.get('/protected', (req, res) => {
 
 // Get all tasks (protected)
 app.get('/tasks', authenticateToken, async (req, res) => {
-  const tasks = await Task.find();
-  res.json(tasks);
+  console.log('[GET /tasks] Request received');
+  try {
+    const tasks = await Task.find();
+    res.json(tasks);
+  } catch (error) {
+    console.error('[GET /tasks] Error:', error);
+    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
+  }
 });
 
 // Create a new task (protected)
 app.post('/tasks', authenticateToken, async (req, res) => {
   const { title, description, assignedTo, status, priority } = req.body;
+  console.log('[POST /tasks] Body:', req.body);
   if (!title || !assignedTo || !status || !priority) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
@@ -295,6 +313,7 @@ app.post('/tasks', authenticateToken, async (req, res) => {
 // Update a task (protected)
 app.put('/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+  console.log('[PUT /tasks/:id] Request to update task with id:', id);
   if (!id) {
     return res.status(400).json({ message: 'Missing task ID' });
   }
@@ -308,6 +327,7 @@ app.put('/tasks/:id', authenticateToken, async (req, res) => {
   }
   
   const { title, description, assignedTo, status, priority, version, forceVersion } = req.body;
+  console.log('[PUT /tasks/:id] Body:', req.body);
   
   // Enforce unique title and not matching column names (if title is being changed)
   if (title !== undefined) {
@@ -404,6 +424,7 @@ app.put('/tasks/:id', authenticateToken, async (req, res) => {
 // Delete a task (protected)
 app.delete('/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
+  console.log('[DELETE /tasks/:id] Request to delete task with id:', id);
   if (!id) {
     return res.status(400).json({ message: 'Missing task ID' });
   }
@@ -443,6 +464,7 @@ app.delete('/tasks/:id', authenticateToken, async (req, res) => {
 
 // Get activity logs (protected) - returns last 20 actions
 app.get('/activities', authenticateToken, async (req, res) => {
+  console.log('[GET /activities] Request received');
   try {
     // Check if MongoDB is connected
     if (mongoose.connection.readyState !== 1) {
@@ -462,6 +484,8 @@ app.get('/activities', authenticateToken, async (req, res) => {
 app.post('/tasks/:id/resolve-conflict', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { resolution, mergedData } = req.body;
+  console.log('[POST /tasks/:id/resolve-conflict] Request to resolve conflict for task with id:', id);
+  console.log('[POST /tasks/:id/resolve-conflict] Body:', req.body);
   
   if (!id) {
     return res.status(400).json({ message: 'Missing task ID' });
@@ -536,6 +560,7 @@ app.post('/tasks/:id/resolve-conflict', authenticateToken, async (req, res) => {
 // Log a custom activity (protected) - for drag-drop, assign, etc.
 app.post('/activities', authenticateToken, async (req, res) => {
   const { actionType, description, taskId, taskTitle } = req.body;
+  console.log('[POST /activities] Body:', req.body);
   if (!actionType || !description) {
     return res.status(400).json({ message: 'Action type and description required' });
   }
@@ -560,7 +585,7 @@ app.post('/activities', authenticateToken, async (req, res) => {
     const activity = await logActivity(req.user.email, actionType, description, taskId, taskTitle);
     res.status(201).json(activity);
   } catch (error) {
-    console.error('Error logging activity:', error);
+    console.error('[POST /activities] Error:', error);
     // Create a mock activity object on error
     const mockActivity = {
       _id: Date.now().toString(),
@@ -596,6 +621,7 @@ app.get('/users', async (req, res) => {
 
 // Cleanup test tasks (protected) - for development only
 app.delete('/tasks/test-cleanup', authenticateToken, async (req, res) => {
+  console.log('[DELETE /tasks/test-cleanup] Request received');
   try {
     // Check if MongoDB is connected
     if (mongoose.connection.readyState !== 1) {
@@ -609,7 +635,7 @@ app.delete('/tasks/test-cleanup', authenticateToken, async (req, res) => {
     console.log(`[Test Cleanup] Removed ${result.deletedCount} test tasks`);
     res.json({ message: `Removed ${result.deletedCount} test tasks` });
   } catch (error) {
-    console.error('Error during test cleanup:', error);
+    console.error('[DELETE /tasks/test-cleanup] Error:', error);
     res.status(500).json({ message: 'Error during test cleanup' });
   }
 });

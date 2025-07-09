@@ -18,6 +18,10 @@ export default function Register() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      if (res.status === 409) {
+        setError("This email is already registered.");
+        return;
+      }
       if (res.status === 201) {
         navigate("/login");
       } else {
@@ -25,7 +29,7 @@ export default function Register() {
         setError(data.message || "Registration failed");
       }
     } catch (err) {
-      setError("Server error");
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
